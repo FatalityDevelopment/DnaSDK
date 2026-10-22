@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DnaSDK": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
