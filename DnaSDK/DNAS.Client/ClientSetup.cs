@@ -1,5 +1,4 @@
 using System;
-using System.Security.Cryptography;
 
 namespace DNAS;
 
@@ -21,7 +20,6 @@ public sealed class ClientSetup
     public readonly ProofInputPlan Identity;
     public readonly byte[] InitialCdvdClock8;
     public readonly uint InitialRngSeed;
-    public readonly byte[] FirstReplyDesKey8;
     private readonly bool _fixedClockForTest;
     private readonly byte[] _cScratchTail3;
     private readonly byte[] _dScratchTail7;
@@ -30,7 +28,7 @@ public sealed class ClientSetup
     {
         Guard.Size(consoleId8, 8, nameof(consoleId8));
         Guard.Size(discDnasId5, 5, nameof(discDnasId5));
-        Guard.Size(dnasImage, Image.ImageLength, nameof(dnasImage));
+        Guard.Size(dnasImage, ClientImage.ImageLength, nameof(dnasImage));
         Guard.Size(initialCdvdClock8, 8, nameof(initialCdvdClock8));
         GameSerial = DNAS.Identity.NormalizeGameSerial(gameSerial);
         ConsoleId8 = (byte[])consoleId8.Clone();
@@ -42,9 +40,7 @@ public sealed class ClientSetup
         Guard.Size(dScratchTail7, 7, nameof(dScratchTail7));
         _cScratchTail3 = (byte[])cScratchTail3.Clone();
         _dScratchTail7 = (byte[])dScratchTail7.Clone();
-        if (!Image.VerifySignature(DnasImage)) throw new CryptographicException("The supplied DNAS image does not validate under the original image RSA verifier.");
         Identity = ProofInputPlan.PrepareNormalBoot(GameSerial, ConsoleId8, DiscDnasId5);
-        FirstReplyDesKey8 = Image.DeriveFirstReplyKey(DnasImage);
         InitialRngSeed = NativeProofRandom.SeedFromCdvdClock(InitialCdvdClock8);
     }
 

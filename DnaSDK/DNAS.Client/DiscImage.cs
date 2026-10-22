@@ -10,7 +10,7 @@ namespace DNAS;
 public static class DiscImage
 {
     public const int SectorBytes = 2048;
-    public const int ImageBytes = Image.ImageLength;
+    public const int ImageBytes = ClientImage.ImageLength;
     public const int ImageSectors = ImageBytes / SectorBytes;
 
     /// <summary>

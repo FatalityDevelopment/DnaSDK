@@ -21,6 +21,7 @@ public sealed partial class Client
     private (byte flag, byte[] value)? _finalResult;
     private uint _nativeReadyStatus;
     private byte[]? _rsaModulus128;
+    private byte[]? _imagePublicModulus128;
     private byte[]? _finalPayload4;
 
     /// <summary>Configure authority data for a simulated client session.</summary>
@@ -28,6 +29,17 @@ public sealed partial class Client
     {
         Guard.Size(modulus128, 128, nameof(modulus128));
         _rsaModulus128 = (byte[])modulus128.Clone();
+    }
+
+    /// <summary>
+    /// Configure the optional, client-side image-signature verifier. This key
+    /// is independent of the S1 ticket RSA modulus, and must come from the
+    /// caller's own client/title data rather than a bundled SDK constant.
+    /// </summary>
+    public void SetImagePublicKey(byte[] modulus128)
+    {
+        Guard.Size(modulus128, 128, nameof(modulus128));
+        _imagePublicModulus128 = (byte[])modulus128.Clone();
     }
 
     /// <summary>The final four protocol bytes are supplied by the artificial client's caller.</summary>
@@ -153,7 +165,7 @@ public sealed partial class Client
     {
         string serial = Identity.NormalizeGameSerial(gameSerial);
         byte[] discId = Public.ParseDnasId(dnasID);
-        if (imageBytes == null || imageBytes.Length != Image.ImageLength) throw new ArgumentException("DNAS image must be exactly 65536 bytes.", nameof(imageBytes));
+        if (imageBytes == null || imageBytes.Length != ClientImage.ImageLength) throw new ArgumentException("DNAS image must be exactly 65536 bytes.", nameof(imageBytes));
         string id = BitConverter.ToString(discId);
         byte[] image = (byte[])imageBytes.Clone();
         ClientEvidence evidence = _imageEvidenceProvider?.Invoke(serial, id, (byte[])image.Clone()) ?? _evidenceProvider?.Invoke(serial, id) ?? throw new NotSupportedException("The original PS2 proof-engine instructions and cipher modes are recovered, but the full original key/IV and output-buffer dataflow has not been verified against genuine four-field captures. Serial, disc ID and image bytes do not provide the console's i.Link identity. No synthetic proof will be emitted.");
@@ -171,7 +183,7 @@ public sealed partial class Client
     /// </summary>
     public byte[] BuildNativeRequest(ProofInputPlan identity, byte[] dnasImage, NativeProofCore.Material[] materials, NativeProofRandom nativeRng, byte[] scratchTailC3, byte[] scratchTailD7, byte[] header40, byte[] lookupId8, byte[] envelopeRandom16, byte parameter = 2)
     {
-        if (dnasImage == null || dnasImage.Length != Image.ImageLength) throw new ArgumentException("DNAS image must contain 65536 bytes.", nameof(dnasImage));
+        if (dnasImage == null || dnasImage.Length != ClientImage.ImageLength) throw new ArgumentException("DNAS image must contain 65536 bytes.", nameof(dnasImage));
         Guard.Size(header40, 40, nameof(header40));
         Guard.Size(lookupId8, 8, nameof(lookupId8));
         Guard.Size(envelopeRandom16, 16, nameof(envelopeRandom16));
@@ -220,7 +232,7 @@ public sealed partial class Client
     {
         if (identity == null) throw new ArgumentNullException(nameof(identity));
         Guard.Size(seedClock8, 8, nameof(seedClock8));
-        Guard.Size(dnasImage, Image.ImageLength, nameof(dnasImage));
+        Guard.Size(dnasImage, ClientImage.ImageLength, nameof(dnasImage));
         NativeProofCore.Material[] banks = DnasProofConstants.CreateMaterials(stageClocks8);
         var (fields, envelopeRandom) = new NativeClientProofProducer(NativeProofRandom.FromCdvdClock(seedClock8))
         .GenerateScheduled(identity, banks, scratchTailC3, scratchTailD7, schedule, parameter);
@@ -255,7 +267,7 @@ public sealed partial class Client
     public byte[] BuildNativeRequest(ProofInputPlan identity, NativeProofCore.Material[] materials, NativeProofRandom nativeRandom, byte[] cScratchTail3, byte[] dScratchTail7, byte[] header40, byte[] lookupId8, byte[] imageBytes, byte[] envelopeRandom16, byte nativeParameter = 2)
     {
         if (identity == null) throw new ArgumentNullException(nameof(identity));
-        if (imageBytes == null || imageBytes.Length != Image.ImageLength) throw new ArgumentException("DNAS image must be exactly 65536 bytes.", nameof(imageBytes));
+        if (imageBytes == null || imageBytes.Length != ClientImage.ImageLength) throw new ArgumentException("DNAS image must be exactly 65536 bytes.", nameof(imageBytes));
         InitialFields fields = new NativeClientProofProducer(nativeRandom).Generate(identity, materials, cScratchTail3, dScratchTail7, nativeParameter);
         Guard.Size(envelopeRandom16, 16, nameof(envelopeRandom16));
         byte[] request = BuildFromEvidence(new ClientEvidence(header40, lookupId8, fields, imageBytes), envelopeRandom16);

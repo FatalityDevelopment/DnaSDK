@@ -23,7 +23,7 @@ public sealed class ClientEvidence
         Fields = fields ?? throw new ArgumentNullException(nameof(fields));
         Header40 = (byte[])header40.Clone();
         LookupId8 = (byte[])lookupId8.Clone();
-        if (dnasImage != null && dnasImage.Length < Image.RequiredPrefixLength) throw new ArgumentException("DNAS image is too short.", nameof(dnasImage));
+        if (dnasImage != null && dnasImage.Length < ClientImage.RequiredPrefixLength) throw new ArgumentException("DNAS image is too short.", nameof(dnasImage));
         DnasImage = dnasImage == null ? null : (byte[])dnasImage.Clone();
     }
 }

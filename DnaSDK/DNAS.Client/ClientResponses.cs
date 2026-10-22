@@ -19,15 +19,12 @@ public sealed partial class Client
     {
         RequireStage(ExchangeStage.AwaitFirstReply);
         if (_dnasImage == null) throw new NotSupportedException("Provide the loaded DNAS image through ClientEvidence to derive the first-reply key.");
-        // Four-input and normal complete-image clients must validate the actual
-        // original signed image. The legacy research-only ClientEvidence overload
-        // also permits a 423-byte SHA source prefix for the old trace regression.
+        // S1 Challenge-A key derivation uses only the supplied client image.
+        // Optional signed-image verification occurs once before C2 is committed.
         Packet reply = new Packet(serverReply328);
         Packet outer = Protocol.DecryptReply1Outer(reply);
         byte[] challengeA = outer.Payload.AsSpan(0, 8).ToArray();
-        byte[] key = _dnasImage.Length == Image.ImageLength
-        ? Image.DeriveVerifiedFirstReplyKey(_dnasImage, challengeA)
-        : Image.DeriveFirstReplyKey(_dnasImage, challengeA);
+        byte[] key = ClientImage.DeriveFirstReplyKey(_dnasImage, challengeA);
         return ProcessFirstResponse(serverReply328, key);
     }
 
@@ -51,11 +48,8 @@ public sealed partial class Client
         // Both the normal image-derived key path and the trace-only key
         // overload must establish the same local state for reply two.
         Packet candidate = Protocol.BuildSecondRequest(reply.Header, outer, recoveredDesKey8, _rsaModulus128 ?? throw new InvalidOperationException("Configure the server RSA public modulus before processing S1."));
-        uint readiness = _dnasImage is
-        {
-            Length: Image.ImageLength
-        }
-        ? NativeClientReadiness.Initialize(_dnasImage) : 0;
+        uint readiness = _dnasImage != null && _dnasImage.Length == ClientImage.ImageLength && _imagePublicModulus128 != null
+            ? NativeClientReadiness.Initialize(_dnasImage, _imagePublicModulus128) : 0;
         _request2 = candidate;
         _nativeReadyStatus = readiness;
         return (byte[])candidate.Raw.Clone();
@@ -82,6 +76,10 @@ public sealed partial class Client
         // On the traced normal path neither touches the 128-byte payload.
         // The caller at 0x004CBE34 rejects a separately set error bit; its
         // initial managed session value remains clear absent an error.
+        if (_nativeReadyStatus == 0 && _imagePublicModulus128 == null)
+        {
+            throw new NotSupportedException("Configure the client image-signature public modulus with SetImagePublicKey before simulating the signed-image readiness check.");
+        }
         if (SecondReplyCode.EvaluatePrimaryEntryStatus(_nativeReadyStatus) != 16)
         throw new CryptographicException("Original native readiness gate rejected the second response.");
         Packet finalRequest = Protocol.BuildFinalRequest(reply.Header, _finalPayload4 ?? throw new InvalidOperationException("The artificial client requires its final four-byte request payload."));

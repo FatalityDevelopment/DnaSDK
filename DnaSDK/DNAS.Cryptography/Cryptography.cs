@@ -9,5 +9,4 @@ namespace DNAS;
         public static byte[] TripleDesDecrypt(byte[] data, byte[] key24, byte[]? iv8 = null) => DES.Decrypt3(data, key24, iv8);
         public static byte[] RsaPublicOperation(byte[] operand128, byte[] modulus128, int exponent = Public.RsaExponent) => RSA.PublicOperation(operand128, modulus128, exponent);
         public static byte[] VerifyServerTicket(byte[] signedOperand128, byte[] modulus128) => RSA.VerifyServerOperand(signedOperand128, modulus128);
-        public static bool VerifySignedImage(byte[] image) => Image.VerifySignature(image);
     }
