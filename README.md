@@ -1,7 +1,9 @@
 [README(1).md](https://github.com/user-attachments/files/33941024/README.1.md)
-# DnaSDK — PlayStation 2 DNAS Protocol Reconstruction
+# DnaSDK — PlayStation 2 DNAS Development Kit
 
-**A research-driven, game-independent C# implementation of the PlayStation 2 Dynamic Network Authentication System (DNAS) client/server protocol.**
+**A reconstructed development kit for the original PlayStation 2 Dynamic Network Authentication System (DNAS), providing protocol handling, cryptography, client/server authentication, and SSL/TLS communication for authentic, dynamically generated DNAS sessions.
+
+This presents DnaSDK as an actual development kit, rather than simply a reverse-engineering research project.**
 
 DnaSDK is an effort to document and reconstruct what the original PlayStation 2 DNAS software actually does: the legacy SSL/TLS transport, HTTP message framing, packet formats, console/disc/title proofs, cryptographic transformations, stateful request/response exchange, and native client-side checks. Its purpose is **interoperability and preservation**, not simply returning a captured packet or patching a game to skip authentication.
 
