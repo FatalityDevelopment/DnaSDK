@@ -475,16 +475,6 @@ PacketLogs/
 
 When an S1 mutation is requested, the current implementation additionally saves the **original unmodified S1** separately before sending the mutated packet. This makes a byte-for-byte comparison possible.
 
-Example experiment:
-
-```powershell
-# Control: preserve the standard S1 operation
-DnaSDK.exe --s1-patch 0:01080005 --capture-dir PacketLogs/Control
-
-# Diagnostic-only experiment: change one command byte in transmitted S1
-DnaSDK.exe --s1-patch 3:06 --capture-dir PacketLogs/Command06
-```
-
 The server serializes a normal generated reply first, then modifies the outgoing byte array **immediately before the HTTP send**. This means the retail client—not a patched emulator instruction—is what decides whether the altered packet passes validation. The server's own session retains the canonical unmodified response.
 
 For any claim about a native branch, report **both** the wire change and the executed native control flow. A reachable branch in a memory dump does **not** prove a legal packet can select it; the definitive test is whether an unmodified client validates the exchange and proceeds normally.
